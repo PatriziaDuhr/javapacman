@@ -1,10 +1,8 @@
 /* Drew Schuster */
 import javax.swing.*;
 import java.awt.event.*;
-import java.awt.geom.Point2D;
 import javax.swing.JApplet;
 import java.awt.*;
-import java.util.*;
 import java.lang.*;
 
 /* This class contains the entire game... most of the game logic is in the Board class but this
@@ -44,7 +42,7 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
     f.setResizable(false);
 
     /* Set the New flag to 1 because this is a new game */
-    b.New=1;
+    b.setNew(1);
 
     /* Manually call the first frameStep to initialize the game. */
     stepFrame(true);
@@ -69,32 +67,32 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
   */
   public void repaint()
   {
-    if (b.player.teleport)
+    if (b.getPlayer().isTeleport())
     {
-      b.repaint(b.player.lastX-20,b.player.lastY-20,80,80);
-      b.player.teleport=false;
+      b.repaint(b.getPlayer().getLastX() -20, b.getPlayer().getLastY() -20,80,80);
+      b.getPlayer().setTeleport(false);
     }
     b.repaint(0,0,600,20);
     b.repaint(0,420,600,40);
-    b.repaint(b.player.x-20,b.player.y-20,80,80);
-    b.repaint(b.ghost1.x-20,b.ghost1.y-20,80,80);
-    b.repaint(b.ghost2.x-20,b.ghost2.y-20,80,80);
-    b.repaint(b.ghost3.x-20,b.ghost3.y-20,80,80);
-    b.repaint(b.ghost4.x-20,b.ghost4.y-20,80,80);
+    b.repaint(b.getPlayer().getX() -20, b.getPlayer().getY() -20,80,80);
+    b.repaint(b.getGhost1().getX() -20, b.getGhost1().getY() -20,80,80);
+    b.repaint(b.getGhost2().getX() -20, b.getGhost2().getY() -20,80,80);
+    b.repaint(b.getGhost3().getX() -20, b.getGhost3().getY() -20,80,80);
+    b.repaint(b.getGhost4().getX() -20, b.getGhost4().getY() -20,80,80);
   }
 
   /* Steps the screen forward one frame */
   public void stepFrame(boolean New)
   {
     /* If we aren't on a special screen than the timers can be set to -1 to disable them */
-    if (!b.titleScreen && !b.winScreen && !b.overScreen)
+    if (!b.isTitleScreen() && !b.isWinScreen() && !b.isOverScreen())
     {
       timer = -1;
       titleTimer = -1;
     }
 
     /* If we are playing the dying animation, keep advancing frames until the animation is complete */
-    if (b.dying>0)
+    if (b.getPlayer().getDying() >0)
     {
       b.repaint();
       return;
@@ -102,11 +100,11 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
 
     /* New can either be specified by the New parameter in stepFrame function call or by the state
        of b.New.  Update New accordingly */ 
-    New = New || (b.New !=0) ;
+    New = New || (b.getNew() !=0) ;
 
     /* If this is the title screen, make sure to only stay on the title screen for 5 seconds.
        If after 5 seconds the user hasn't started a game, start up demo mode */
-    if (b.titleScreen)
+    if (b.isTitleScreen())
     {
       if (titleTimer == -1)
       {
@@ -116,8 +114,8 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
       long currTime = System.currentTimeMillis();
       if (currTime - titleTimer >= 5000)
       {
-        b.titleScreen = false;
-        b.demo = true;
+        b.setTitleScreen(false);
+        b.setDemo(true);
         titleTimer = -1;
       }
       b.repaint();
@@ -126,7 +124,7 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
  
     /* If this is the win screen or game over screen, make sure to only stay on the screen for 5 seconds.
        If after 5 seconds the user hasn't pressed a key, go to title screen */
-    else if (b.winScreen || b.overScreen)
+    else if (b.isWinScreen() || b.isOverScreen())
     {
       if (timer == -1)
       {
@@ -136,9 +134,9 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
       long currTime = System.currentTimeMillis();
       if (currTime - timer >= 5000)
       {
-        b.winScreen = false;
-        b.overScreen = false;
-        b.titleScreen = true;
+        b.setWinScreen(false);
+        b.setOverScreen(false);
+        b.setTitleScreen(true);
         timer = -1;
       }
       b.repaint();
@@ -151,60 +149,60 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
     {
       /* The pacman player has two functions, demoMove if we're in demo mode and move if we're in
          user playable mode.  Call the appropriate one here */
-      if (b.demo)
+      if (b.isDemo())
       {
-        b.player.demoMove();
+        b.getPlayer().demoMove();
       }
       else
       {
-        b.player.move();
+        b.getPlayer().move();
       }
 
       /* Also move the ghosts, and update the pellet states */
-      b.ghost1.move(); 
-      b.ghost2.move(); 
-      b.ghost3.move(); 
-      b.ghost4.move(); 
-      b.player.updatePellet();
-      b.ghost1.updatePellet();
-      b.ghost2.updatePellet();
-      b.ghost3.updatePellet();
-      b.ghost4.updatePellet();
+      b.getGhost1().move();
+      b.getGhost2().move();
+      b.getGhost3().move();
+      b.getGhost4().move();
+      b.getPlayer().updatePellet();
+      b.getGhost1().updatePellet();
+      b.getGhost2().updatePellet();
+      b.getGhost3().updatePellet();
+      b.getGhost4().updatePellet();
     }
 
     /* We either have a new game or the user has died, either way we have to reset the board */
-    if (b.stopped || New)
+    if (b.isStopped() || New)
     {
       /*Temporarily stop advancing frames */
       frameTimer.stop();
 
       /* If user is dying ... */
-      while (b.dying >0)
+      while (b.getPlayer().getDying() >0)
       {
         /* Play dying animation. */
         stepFrame(false);
       }
 
       /* Move all game elements back to starting positions and orientations */
-      b.player.currDirection='L';
-      b.player.direction='L';
-      b.player.desiredDirection='L';
-      b.player.x = 200;
-      b.player.y = 300;
-      b.ghost1.x = 180;
-      b.ghost1.y = 180;
-      b.ghost2.x = 200;
-      b.ghost2.y = 180;
-      b.ghost3.x = 220;
-      b.ghost3.y = 180;
-      b.ghost4.x = 220;
-      b.ghost4.y = 180;
+      b.getPlayer().setCurrDirection('L');
+      b.getPlayer().setDirection('L');
+      b.getPlayer().setDesiredDirection('L');
+      b.getPlayer().setX(200);
+      b.getPlayer().setY(300);
+      b.getGhost1().setX(180);
+      b.getGhost1().setY(180);
+      b.getGhost2().setX(200);
+      b.getGhost2().setY(180);
+      b.getGhost3().setX(220);
+      b.getGhost3().setY(180);
+      b.getGhost4().setX(220);
+      b.getGhost4().setY(180);
 
       /* Advance a frame to display main state*/
       b.repaint(0,0,600,600);
 
       /*Start advancing frames once again*/
-      b.stopped=false;
+      b.setStopped(false);
       frameTimer.start();
     }
     /* Otherwise we're in a normal state, advance one frame*/
@@ -218,26 +216,26 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
   public void keyPressed(KeyEvent e) 
   {
     /* Pressing a key in the title screen starts a game */
-    if (b.titleScreen)
+    if (b.isTitleScreen())
     {
-      b.titleScreen = false;
+      b.setTitleScreen(false);
       return;
     }
     /* Pressing a key in the win screen or game over screen goes to the title screen */
-    else if (b.winScreen || b.overScreen)
+    else if (b.isWinScreen() || b.isOverScreen())
     {
-      b.titleScreen = true;
-      b.winScreen = false;
-      b.overScreen = false;
+      b.setTitleScreen(true);
+      b.setWinScreen(false);
+      b.setOverScreen(false);
       return;
     }
     /* Pressing a key during a demo kills the demo mode and starts a new game */
-    else if (b.demo)
+    else if (b.isDemo())
     {
-      b.demo=false;
+      b.setDemo(false);
       /* Stop any pacman eating sounds */
-      b.sounds.nomNomStop();
-      b.New=1;
+      b.getSounds().nomNomStop();
+      b.setNew(1);
       return;
     }
 
@@ -245,16 +243,17 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
     switch(e.getKeyCode())
     {
       case KeyEvent.VK_LEFT:
-       b.player.desiredDirection='L';
+
+       b.getPlayer().setDesiredDirection('L');
        break;     
       case KeyEvent.VK_RIGHT:
-       b.player.desiredDirection='R';
+       b.getPlayer().setDesiredDirection('R');
        break;     
       case KeyEvent.VK_UP:
-       b.player.desiredDirection='U';
+       b.getPlayer().setDesiredDirection('U');
        break;     
       case KeyEvent.VK_DOWN:
-       b.player.desiredDirection='D';
+       b.getPlayer().setDesiredDirection('D');
        break;     
     }
 
@@ -263,7 +262,7 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
 
   /* This function detects user clicks on the menu items on the bottom of the screen */
   public void mousePressed(MouseEvent e){
-    if (b.titleScreen || b.winScreen || b.overScreen)
+    if (b.isTitleScreen() || b.isWinScreen() || b.isOverScreen())
     {
       /* If we aren't in the game where a menu is showing, ignore clicks */
       return;
@@ -277,7 +276,7 @@ public class Pacman extends JApplet implements MouseListener, KeyListener
       if ( 100 <= x && x <= 150)
       {
         /* New game has been clicked */
-        b.New = 1;
+        b.setNew(1);
       }
       else if (180 <= x && x <= 300)
       {
